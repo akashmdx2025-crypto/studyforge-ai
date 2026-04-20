@@ -51,4 +51,4 @@ class InMemoryVectorStore {
 // Singleton instance — persists in Next.js server memory during runtime
 const globalForStore = global as unknown as { vectorStore: InMemoryVectorStore };
 export const vectorStore = globalForStore.vectorStore ?? new InMemoryVectorStore();
-if (process.env.NODE_ENV !== 'production') globalForStore.vectorStore = vectorStore;
+globalForStore.vectorStore = vectorStore;
