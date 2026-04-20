@@ -49,7 +49,7 @@ export default function StudyPage() {
           </div>
         )}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-[#a1a1aa] hidden sm:block">gemini-1.5-flash · RAG</span>
+          <span className="text-xs text-[#a1a1aa] hidden sm:block">gemini-1.5-flash-latest · RAG</span>
           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
         </div>
       </header>
