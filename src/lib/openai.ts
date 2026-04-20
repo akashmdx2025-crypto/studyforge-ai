@@ -8,7 +8,7 @@ if (!process.env.GOOGLE_AI_API_KEY) {
 export const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
 
 export const CHAT_MODEL = 'gemini-1.5-flash';
-export const EMBEDDING_MODEL = 'embedding-001';
+export const EMBEDDING_MODEL = 'gemini-embedding-001';
 
 export async function generateEmbedding(text: string): Promise<number[]> {
   const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
