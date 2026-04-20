@@ -10,53 +10,80 @@ export const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
 export const CHAT_MODEL = 'gemini-1.5-flash-latest';
 export const EMBEDDING_MODEL = 'gemini-embedding-001';
 
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, initialDelay = 2000): Promise<T> {
+  let lastError: any;
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      const isRateLimit = error.message?.includes('429') || error.status === 429 || error.message?.toLowerCase().includes('quota');
+      if (isRateLimit && i < retries - 1) {
+        const delay = initialDelay * Math.pow(2, i);
+        console.warn(`Rate limit hit. Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+}
+
 export async function generateEmbedding(text: string): Promise<number[]> {
-  const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
-  const result = await model.embedContent(text);
-  return result.embedding.values;
+  return withRetry(async () => {
+    const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
+    const result = await model.embedContent(text);
+    return result.embedding.values;
+  });
 }
 
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
-  const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
-  // Native batching: counts as ONE request towards the 100 RPM quota
-  const result = await model.batchEmbedContents({
-    requests: texts.map(t => ({ content: { role: 'user', parts: [{ text: t }] } })),
+  return withRetry(async () => {
+    const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
+    const result = await model.batchEmbedContents({
+      requests: texts.map(t => ({ content: { role: 'user', parts: [{ text: t }] } })),
+    });
+    return result.embeddings.map(e => e.values);
   });
-  return result.embeddings.map(e => e.values);
 }
 
 export async function generateChatResponse(prompt: string, temperature = 0.3): Promise<{ text: string; promptTokens: number; completionTokens: number }> {
-  const model = genAI.getGenerativeModel({
-    model: CHAT_MODEL,
-    generationConfig: { temperature, maxOutputTokens: 1200 },
+  return withRetry(async () => {
+    const model = genAI.getGenerativeModel({
+      model: CHAT_MODEL,
+      generationConfig: { temperature, maxOutputTokens: 1200 },
+    });
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text();
+    const usage = response.usageMetadata;
+    return {
+      text,
+      promptTokens: usage?.promptTokenCount ?? 0,
+      completionTokens: usage?.candidatesTokenCount ?? 0,
+    };
   });
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  const text = response.text();
-  const usage = response.usageMetadata;
-  return {
-    text,
-    promptTokens: usage?.promptTokenCount ?? 0,
-    completionTokens: usage?.candidatesTokenCount ?? 0,
-  };
 }
 
 export async function generateJsonResponse(prompt: string, temperature = 0.4): Promise<{ text: string; promptTokens: number; completionTokens: number }> {
-  const model = genAI.getGenerativeModel({
-    model: CHAT_MODEL,
-    generationConfig: {
-      temperature,
-      maxOutputTokens: 2000,
-      responseMimeType: 'application/json',
-    },
+  return withRetry(async () => {
+    const model = genAI.getGenerativeModel({
+      model: CHAT_MODEL,
+      generationConfig: {
+        temperature,
+        maxOutputTokens: 2000,
+        responseMimeType: 'application/json',
+      },
+    });
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text();
+    const usage = response.usageMetadata;
+    return {
+      text,
+      promptTokens: usage?.promptTokenCount ?? 0,
+      completionTokens: usage?.candidatesTokenCount ?? 0,
+    };
   });
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  const text = response.text();
-  const usage = response.usageMetadata;
-  return {
-    text,
-    promptTokens: usage?.promptTokenCount ?? 0,
-    completionTokens: usage?.candidatesTokenCount ?? 0,
-  };
 }
