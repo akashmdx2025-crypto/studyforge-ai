@@ -18,8 +18,11 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
-  const results = await Promise.all(texts.map(t => model.embedContent(t)));
-  return results.map(r => r.embedding.values);
+  // Native batching: counts as ONE request towards the 100 RPM quota
+  const result = await model.batchEmbedContents({
+    requests: texts.map(t => ({ content: { role: 'user', parts: [{ text: t }] } })),
+  });
+  return result.embeddings.map(e => e.values);
 }
 
 export async function generateChatResponse(prompt: string, temperature = 0.3): Promise<{ text: string; promptTokens: number; completionTokens: number }> {

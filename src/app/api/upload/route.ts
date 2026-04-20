@@ -50,8 +50,8 @@ export async function POST(req: NextRequest) {
     // Chunk the text
     const chunks = chunkText(extractedText);
 
-    // Generate embeddings in batches of 20
-    const BATCH_SIZE = 20;
+    // Generate embeddings in batches of 100 (Gemini native batch limit is 2048)
+    const BATCH_SIZE = 100;
     const entries: VectorEntry[] = [];
 
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
@@ -69,7 +69,6 @@ export async function POST(req: NextRequest) {
         } catch (error: any) {
           if (error.message?.includes('429') || error.status === 429) {
             retries++;
-            // Wait with exponential backoff (2s, 4s, 8s)
             await new Promise(r => setTimeout(r, Math.pow(2, retries) * 1000));
           } else {
             throw error;
@@ -88,11 +87,6 @@ export async function POST(req: NextRequest) {
             endChar: batch[j].endChar,
           },
         });
-      }
-      
-      // Small pause between batches to stay under free tier RPM
-      if (i + BATCH_SIZE < chunks.length) {
-        await new Promise(r => setTimeout(r, 500));
       }
     }
 
