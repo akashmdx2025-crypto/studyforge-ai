@@ -32,13 +32,10 @@ export async function POST(req: NextRequest) {
 
     if (fileExt === 'pdf') {
       const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      // Import from the internal lib path to avoid DOMMatrix ReferenceError on Vercel.
-      // The main pdf-parse entry point loads test helpers that reference browser-only APIs.
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfParse = require('pdf-parse/lib/pdf-parse.js');
-      const pdfData = await pdfParse(buffer);
-      extractedText = pdfData.text;
+      // unpdf is built for serverless — no DOMMatrix, no Node.js-only APIs
+      const { extractText } = await import('unpdf');
+      const { text } = await extractText(new Uint8Array(arrayBuffer), { mergePages: true });
+      extractedText = text;
     } else {
       extractedText = await file.text();
     }

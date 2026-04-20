@@ -1,8 +1,6 @@
 // source_handbook: week11-hackathon-preparation
 import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {
-  serverExternalPackages: ['pdf-parse'],
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
