@@ -6,7 +6,10 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org)
 [![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-green?logo=openai)](https://openai.com)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38bdf8?logo=tailwindcss)](https://tailwindcss.com)
-[![Vercel](https://img.shields.io/badge/Deployed-Vercel-black?logo=vercel)](https://vercel.com)
+[![Vercel](https://img.shields.io/badge/Live-Vercel-black?logo=vercel)](https://studyforge-ai-demo-cortexstudyforge.vercel.app)
+
+🌐 **Live Demo:** [https://studyforge-ai-demo-cortexstudyforge.vercel.app](https://studyforge-ai-demo-cortexstudyforge.vercel.app)
+📦 **GitHub:** [https://github.com/akashmdx2025-crypto/studyforge-ai](https://github.com/akashmdx2025-crypto/studyforge-ai)
 
 ---
 
