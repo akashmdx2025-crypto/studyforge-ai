@@ -33,9 +33,10 @@ export async function POST(req: NextRequest) {
     if (fileExt === 'pdf') {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      // Dynamic import to avoid issues with pdf-parse
-      const pdfParseModule = await import('pdf-parse');
-      const pdfParse = (pdfParseModule as any).default ?? pdfParseModule;
+      // Import from the internal lib path to avoid DOMMatrix ReferenceError on Vercel.
+      // The main pdf-parse entry point loads test helpers that reference browser-only APIs.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const pdfParse = require('pdf-parse/lib/pdf-parse.js');
       const pdfData = await pdfParse(buffer);
       extractedText = pdfData.text;
     } else {
