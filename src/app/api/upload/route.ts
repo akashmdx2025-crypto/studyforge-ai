@@ -56,7 +56,26 @@ export async function POST(req: NextRequest) {
 
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
       const batch = chunks.slice(i, i + BATCH_SIZE);
-      const embeddings = await generateEmbeddings(batch.map(c => c.text));
+      
+      // Retry logic for rate limiting (429)
+      let retries = 0;
+      let success = false;
+      let embeddings: number[][] = [];
+      
+      while (!success && retries < 3) {
+        try {
+          embeddings = await generateEmbeddings(batch.map(c => c.text));
+          success = true;
+        } catch (error: any) {
+          if (error.message?.includes('429') || error.status === 429) {
+            retries++;
+            // Wait with exponential backoff (2s, 4s, 8s)
+            await new Promise(r => setTimeout(r, Math.pow(2, retries) * 1000));
+          } else {
+            throw error;
+          }
+        }
+      }
 
       for (let j = 0; j < batch.length; j++) {
         entries.push({
@@ -69,6 +88,11 @@ export async function POST(req: NextRequest) {
             endChar: batch[j].endChar,
           },
         });
+      }
+      
+      // Small pause between batches to stay under free tier RPM
+      if (i + BATCH_SIZE < chunks.length) {
+        await new Promise(r => setTimeout(r, 500));
       }
     }
 
