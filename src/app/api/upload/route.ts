@@ -1,6 +1,6 @@
 // source_handbook: week11-hackathon-preparation
 import { NextRequest, NextResponse } from 'next/server';
-import { openai, EMBEDDING_MODEL } from '@/lib/openai';
+import { generateEmbeddings } from '@/lib/openai';
 import { vectorStore } from '@/lib/vectorstore';
 import { chunkText } from '@/lib/chunker';
 import { VectorEntry } from '@/lib/types';
@@ -56,16 +56,13 @@ export async function POST(req: NextRequest) {
 
     for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
       const batch = chunks.slice(i, i + BATCH_SIZE);
-      const embeddingResponse = await openai.embeddings.create({
-        model: EMBEDDING_MODEL,
-        input: batch.map(c => c.text),
-      });
+      const embeddings = await generateEmbeddings(batch.map(c => c.text));
 
       for (let j = 0; j < batch.length; j++) {
         entries.push({
           id: crypto.randomUUID(),
           text: batch[j].text,
-          embedding: embeddingResponse.data[j].embedding,
+          embedding: embeddings[j],
           metadata: {
             chunkIndex: i + j,
             startChar: batch[j].startChar,

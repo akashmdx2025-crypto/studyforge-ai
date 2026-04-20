@@ -1,6 +1,6 @@
 // source_handbook: week11-hackathon-preparation
 import { NextRequest, NextResponse } from 'next/server';
-import { openai, CHAT_MODEL } from '@/lib/openai';
+import { CHAT_MODEL, generateJsonResponse } from '@/lib/openai';
 import { vectorStore } from '@/lib/vectorstore';
 import { FLASHCARD_SYSTEM_PROMPT } from '@/lib/prompts';
 import { logAICall } from '@/lib/logger';
@@ -21,24 +21,15 @@ export async function POST(req: NextRequest) {
       .replace('{n}', String(count))
       .replace('{chunks}', chunkText);
 
-    const completion = await openai.chat.completions.create({
-      model: CHAT_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.4,
-      max_tokens: 2000,
-      response_format: { type: 'json_object' },
-    });
-
-    const responseText = completion.choices[0].message.content || '{}';
-    const usage = completion.usage;
+    const { text: responseText, promptTokens, completionTokens } = await generateJsonResponse(prompt, 0.4);
     const flashcardData = JSON.parse(responseText);
 
     const log = logAICall({
       action: 'flashcards',
       model: CHAT_MODEL,
-      promptTokens: usage?.prompt_tokens ?? 0,
-      completionTokens: usage?.completion_tokens ?? 0,
-      totalTokens: usage?.total_tokens ?? 0,
+      promptTokens,
+      completionTokens,
+      totalTokens: promptTokens + completionTokens,
       latencyMs: Date.now() - startTime,
       guardrailsPassed: true,
       qualityScore: computeQualityScore(responseText, chunks),

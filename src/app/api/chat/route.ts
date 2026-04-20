@@ -1,6 +1,6 @@
 // source_handbook: week11-hackathon-preparation
 import { NextRequest, NextResponse } from 'next/server';
-import { openai, CHAT_MODEL, EMBEDDING_MODEL } from '@/lib/openai';
+import { CHAT_MODEL, generateEmbedding, generateChatResponse } from '@/lib/openai';
 import { vectorStore } from '@/lib/vectorstore';
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompts';
 import { checkInputSafety, checkRelevance, checkOutputGrounding, computeQualityScore } from '@/lib/guardrails';
@@ -43,11 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate embedding for the question
-    const embeddingResponse = await openai.embeddings.create({
-      model: EMBEDDING_MODEL,
-      input: question,
-    });
-    const queryEmbedding = embeddingResponse.data[0].embedding;
+    const queryEmbedding = await generateEmbedding(question);
 
     // Retrieve top 3 chunks
     const results = vectorStore.search(queryEmbedding, 3);
@@ -86,15 +82,7 @@ export async function POST(req: NextRequest) {
       .replace('{retrieved_chunks}', retrievedContext)
       .replace('{question}', question);
 
-    const completion = await openai.chat.completions.create({
-      model: CHAT_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
-      max_tokens: 800,
-    });
-
-    const responseText = completion.choices[0].message.content || '';
-    const usage = completion.usage;
+    const { text: responseText, promptTokens, completionTokens } = await generateChatResponse(prompt);
 
     // Guardrail 3: Output grounding
     const groundingCheck = checkOutputGrounding(responseText, retrievedChunks);
@@ -103,9 +91,9 @@ export async function POST(req: NextRequest) {
     const log = logAICall({
       action: 'chat',
       model: CHAT_MODEL,
-      promptTokens: usage?.prompt_tokens ?? 0,
-      completionTokens: usage?.completion_tokens ?? 0,
-      totalTokens: usage?.total_tokens ?? 0,
+      promptTokens,
+      completionTokens,
+      totalTokens: promptTokens + completionTokens,
       latencyMs: Date.now() - startTime,
       guardrailsPassed: groundingCheck.passed,
       guardrailDetails: groundingCheck.reason,

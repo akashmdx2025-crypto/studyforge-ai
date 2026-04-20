@@ -22,7 +22,7 @@ const steps = [
     icon: '🎓',
     title: 'Study',
     desc: 'Chat with your material, generate quizzes, flashcards, and AI summaries instantly.',
-    detail: 'gpt-4o-mini • guardrails • logging • full transparency',
+    detail: 'gemini-1.5-flash • guardrails • logging • full transparency',
   },
 ];
 
