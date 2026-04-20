@@ -1,12 +1,16 @@
 // source_handbook: week11-hackathon-preparation
 'use client';
 import { useState } from 'react';
-import { QuizQuestion } from '@/lib/types';
+import { QuizQuestion, VectorEntry } from '@/lib/types';
 import { toast } from 'sonner';
 
 const COUNT_OPTIONS = [5, 10, 15];
 
-export default function QuizPanel() {
+interface QuizPanelProps {
+  context?: VectorEntry[];
+}
+
+export default function QuizPanel({ context = [] }: QuizPanelProps) {
   const [count, setCount] = useState(5);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -24,7 +28,7 @@ export default function QuizPanel() {
       const res = await fetch('/api/generate-quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count }),
+        body: JSON.stringify({ count, context }),
       });
       const data = await res.json();
       if (data.success) {

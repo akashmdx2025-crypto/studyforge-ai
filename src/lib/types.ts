@@ -81,6 +81,7 @@ export interface UploadResponse {
   success: boolean;
   stats: DocumentStats;
   preview: string;
+  entries: VectorEntry[];
   error?: string;
 }
 

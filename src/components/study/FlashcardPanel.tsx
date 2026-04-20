@@ -1,12 +1,16 @@
 // source_handbook: week11-hackathon-preparation
 'use client';
 import { useState } from 'react';
-import { Flashcard } from '@/lib/types';
+import { Flashcard, VectorEntry } from '@/lib/types';
 import { toast } from 'sonner';
 
 const COUNT_OPTIONS = [10, 20, 30];
 
-export default function FlashcardPanel() {
+interface FlashcardPanelProps {
+  context?: VectorEntry[];
+}
+
+export default function FlashcardPanel({ context = [] }: FlashcardPanelProps) {
   const [count, setCount] = useState(10);
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [loading, setLoading] = useState(false);
@@ -21,7 +25,7 @@ export default function FlashcardPanel() {
       const res = await fetch('/api/generate-flashcards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count }),
+        body: JSON.stringify({ count, context }),
       });
       const data = await res.json();
       if (data.success) {

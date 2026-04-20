@@ -1,7 +1,7 @@
 // source_handbook: week11-hackathon-preparation
 'use client';
 import { useState } from 'react';
-import { DocumentStats } from '@/lib/types';
+import { DocumentStats, VectorEntry } from '@/lib/types';
 import FileUpload from '@/components/study/FileUpload';
 import DocumentViewer from '@/components/study/DocumentViewer';
 import ChatPanel from '@/components/study/ChatPanel';
@@ -24,12 +24,14 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 export default function StudyPage() {
   const [stats, setStats] = useState<DocumentStats | null>(null);
   const [preview, setPreview] = useState('');
+  const [context, setContext] = useState<VectorEntry[]>([]);
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('chat');
 
-  const handleUploadSuccess = (s: DocumentStats, p: string) => {
+  const handleUploadSuccess = (s: DocumentStats, p: string, entries: VectorEntry[]) => {
     setStats(s);
     setPreview(p);
+    setContext(entries);
     setActiveTab('chat');
   };
 
@@ -71,7 +73,7 @@ export default function StudyPage() {
                 </div>
                 <div className="border-t border-[#1e1e1e] p-3">
                   <button
-                    onClick={() => { setStats(null); setPreview(''); }}
+                    onClick={() => { setStats(null); setPreview(''); setContext([]); }}
                     className="w-full glass glass-hover text-xs text-[#a1a1aa] hover:text-rose-400 py-2 rounded-lg border border-transparent hover:border-rose-500/30 transition-all"
                   >
                     🗑 Remove document & upload new
@@ -83,7 +85,7 @@ export default function StudyPage() {
                 <FileUpload onUploadSuccess={handleUploadSuccess} onUploading={setUploading} />
                 {uploading && (
                   <div className="px-4 pb-4 text-center">
-                    <p className="text-xs text-[#a1a1aa] animate-pulse">Embedding chunks with OpenAI...</p>
+                    <p className="text-xs text-[#a1a1aa] animate-pulse">Processing chunks with Gemini...</p>
                   </div>
                 )}
                 {!uploading && (
@@ -138,10 +140,10 @@ export default function StudyPage() {
               </div>
             ) : (
               <div className="h-full animate-fade-in">
-                {activeTab === 'chat' && <ChatPanel />}
-                {activeTab === 'quiz' && <QuizPanel />}
-                {activeTab === 'flashcards' && <FlashcardPanel />}
-                {activeTab === 'summary' && <SummaryPanel />}
+                {activeTab === 'chat' && <ChatPanel context={context} />}
+                {activeTab === 'quiz' && <QuizPanel context={context} />}
+                {activeTab === 'flashcards' && <FlashcardPanel context={context} />}
+                {activeTab === 'summary' && <SummaryPanel context={context} />}
                 {activeTab === 'logs' && <AILogPanel />}
               </div>
             )}

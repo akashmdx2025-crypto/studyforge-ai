@@ -1,7 +1,7 @@
 // source_handbook: week11-hackathon-preparation
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { ChatMessage } from '@/lib/types';
+import { DocumentStats, VectorEntry, ChatMessage } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -12,7 +12,11 @@ const STARTER_QUESTIONS = [
   'What should I focus on for an exam?',
 ];
 
-export default function ChatPanel() {
+interface ChatPanelProps {
+  context?: VectorEntry[];
+}
+
+export default function ChatPanel({ context = [] }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,7 +45,10 @@ export default function ChatPanel() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: question.trim() }),
+        body: JSON.stringify({ 
+          question: question.trim(),
+          context 
+        }),
       });
       const data = await res.json();
       const aiMsg: ChatMessage = {

@@ -2,10 +2,10 @@
 'use client';
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
-import { DocumentStats } from '@/lib/types';
+import { DocumentStats, VectorEntry } from '@/lib/types';
 
 interface FileUploadProps {
-  onUploadSuccess: (stats: DocumentStats, preview: string) => void;
+  onUploadSuccess: (stats: DocumentStats, preview: string, entries: VectorEntry[]) => void;
   onUploading: (loading: boolean) => void;
 }
 
@@ -47,7 +47,7 @@ export default function FileUpload({ onUploadSuccess, onUploading }: FileUploadP
       setProgress(100);
       if (data.success) {
         toast.success(`✅ Processed ${data.stats.chunkCount} chunks from "${data.stats.fileName}"`);
-        onUploadSuccess(data.stats, data.preview);
+        onUploadSuccess(data.stats, data.preview, data.entries);
       } else {
         toast.error(data.error || 'Upload failed');
       }

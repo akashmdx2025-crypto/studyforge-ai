@@ -9,13 +9,15 @@ import { computeQualityScore } from '@/lib/guardrails';
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
   try {
-    const { detailLevel = 'standard' } = await req.json();
+    const { detailLevel = 'standard', context = [] } = await req.json();
 
-    if (vectorStore.size === 0) {
+    const availableEntries = context.length > 0 ? context : (vectorStore as any).entries || [];
+
+    if (availableEntries.length === 0 && vectorStore.size === 0) {
       return NextResponse.json({ success: false, error: 'No document uploaded yet.' }, { status: 400 });
     }
 
-    const allTexts = vectorStore.getAllTexts();
+    const allTexts = context.length > 0 ? context.map((e: any) => e.text) : vectorStore.getAllTexts();
     const allChunksText = allTexts.join('\n\n---\n\n');
     const prompt = SUMMARY_SYSTEM_PROMPT
       .replace('{detail_level}', detailLevel)

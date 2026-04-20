@@ -105,6 +105,7 @@ export async function POST(req: NextRequest) {
         fileType,
       },
       preview,
+      entries,
     });
   } catch (error: unknown) {
     console.error('Upload error:', error);

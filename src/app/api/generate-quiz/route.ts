@@ -9,13 +9,19 @@ import { computeQualityScore } from '@/lib/guardrails';
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
   try {
-    const { count = 5 } = await req.json();
+    const { count = 5, context = [] } = await req.json();
 
-    if (vectorStore.size === 0) {
+    const availableEntries = context.length > 0 ? context : (vectorStore as any).entries || [];
+
+    if (availableEntries.length === 0 && vectorStore.size === 0) {
       return NextResponse.json({ success: false, error: 'No document uploaded yet.' }, { status: 400 });
     }
 
-    const chunks = vectorStore.getRandomChunks(Math.min(10, vectorStore.size));
+    // Get random chunks from provided context or store
+    const chunks = context.length > 0 
+      ? [...context].sort(() => Math.random() - 0.5).slice(0, Math.min(10, context.length)).map((e: any) => e.text)
+      : vectorStore.getRandomChunks(Math.min(10, vectorStore.size));
+    
     const chunkText = chunks.join('\n\n---\n\n');
     const prompt = QUIZ_SYSTEM_PROMPT
       .replace('{n}', String(count))

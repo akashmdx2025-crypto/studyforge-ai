@@ -6,10 +6,16 @@ import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+import { VectorEntry } from '@/lib/types';
+
 const LEVELS = ['brief', 'standard', 'detailed'] as const;
 type DetailLevel = typeof LEVELS[number];
 
-export default function SummaryPanel() {
+interface SummaryPanelProps {
+  context?: VectorEntry[];
+}
+
+export default function SummaryPanel({ context = [] }: SummaryPanelProps) {
   const [level, setLevel] = useState<DetailLevel>('standard');
   const [summary, setSummary] = useState('');
   const [wordCount, setWordCount] = useState(0);
@@ -22,7 +28,7 @@ export default function SummaryPanel() {
       const res = await fetch('/api/generate-summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ detailLevel: level }),
+        body: JSON.stringify({ detailLevel: level, context }),
       });
       const data = await res.json();
       if (data.success) {

@@ -1,7 +1,7 @@
 // source_handbook: week11-hackathon-preparation
 import { NextRequest, NextResponse } from 'next/server';
 import { CHAT_MODEL, generateEmbedding, generateChatResponse } from '@/lib/openai';
-import { vectorStore } from '@/lib/vectorstore';
+import { vectorStore, InMemoryVectorStore } from '@/lib/vectorstore';
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompts';
 import { checkInputSafety, checkRelevance, checkOutputGrounding, computeQualityScore } from '@/lib/guardrails';
 import { logAICall } from '@/lib/logger';
@@ -9,13 +9,15 @@ import { logAICall } from '@/lib/logger';
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
   try {
-    const { question } = await req.json();
+    const { question, context = [] } = await req.json();
 
     if (!question || typeof question !== 'string') {
       return NextResponse.json({ success: false, error: 'No question provided' }, { status: 400 });
     }
 
-    if (vectorStore.size === 0) {
+    const availableEntries = context.length > 0 ? context : (vectorStore as any).entries || [];
+
+    if (availableEntries.length === 0 && vectorStore.size === 0) {
       return NextResponse.json({ success: false, error: 'No document uploaded yet. Please upload a study material first.' }, { status: 400 });
     }
 
@@ -45,8 +47,8 @@ export async function POST(req: NextRequest) {
     // Generate embedding for the question
     const queryEmbedding = await generateEmbedding(question);
 
-    // Retrieve top 3 chunks
-    const results = vectorStore.search(queryEmbedding, 3);
+    // Retrieve top 3 chunks (using static search for stateless safety)
+    const results = (InMemoryVectorStore as any).searchStatic(availableEntries, queryEmbedding, 3);
     const topScore = results[0]?.score ?? 0;
 
     // Guardrail 2: Relevance check
